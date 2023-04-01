@@ -1,0 +1,62 @@
+---
+title: "Untitled"
+author: "Adam Garber"
+date: '2023-03-28'
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+Load packages
+```{r}
+
+#install.packages("tinytex")
+#tinytex::install_tinytex()
+
+#install.packages("devtools")
+#devtools::install_github("crsh/papaja")
+#devtools::install_github('andreacirilloac/updateR')
+#library(updateR)
+
+library(tinytex)
+library(tidyverse)
+library(papaja)
+library(gt)
+
+```
+
+Read in data
+```{r}
+
+ma_schools <- read_csv("https://raw.githubusercontent.com/ejvanholm/DataProjects/master/MASchools.csv")
+
+```
+
+
+```{r}
+
+model_data <- ma_schools %>% 
+  select(score8, exptot, income, english)
+
+```
+
+
+
+
+
+
+```{r}
+
+summary(lm(score8 ~ exptot + income + english + exptot*english,
+           data=model_data))
+
+```
+
+
+
+
+
+
+

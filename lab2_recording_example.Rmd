@@ -1,0 +1,177 @@
+---
+title             : "214C - Lab 2"
+shorttitle        : "214C Lab 2 Short Title"
+
+author: 
+  - name          : "Dina Arch"
+
+number_sections: no
+
+documentclass     : "apa6"
+classoption       : "doc"
+output            : papaja::apa6_word
+---
+
+```{r setup, include = FALSE}
+knitr::opts_chunk$set(echo=TRUE)
+#Set up library here
+library("papaja")
+library(knitr)
+library(ggpubr)
+library(psych)
+library(tidyverse)
+```
+
+# Writing
+
+You don't need to worry about formatting when writing your paper.
+You just have to type!
+If you want to have a subsection you may do it like this:
+
+## Subsection
+
+Here, you will discuss anything you need related to the main section.
+For example, in homework, maybe you want to have a subsection for a sub-question (i.e., 1a or 1b).
+
+## Equations
+
+You can include equations by using `$$` on both sides of your formula to let R know that you are creating an equation.
+For example to create a regression formula, you would do this:
+
+$$\hat Y = \beta_0 + \beta_1x $$
+
+# Reporting
+
+Let's discuss how you would report important numerical values, figures, tables, and statistical model tests.As a reminder, we are in an R markdown document.
+So we can use code chunks!
+Don't forget to load packages in the first code chunk here.
+Most of the time, when we're writing a paper, we don't have R code included.
+However, for this class, all R code must be shown.
+However, if you choose to exclude an R code (but it will still run), enter `echo = FALSE` at the top of the code chunk, like this:
+
+```{r, echo = FALSE}
+# This will still run, but will not show code
+# iris is a dataset in the tidyverse package
+# Use Kable to create a pretty table
+kable(head(iris))
+```
+
+## Numerical values
+
+R markdown is a powerful tool because we can pull values directly from the analyses into our document without worrying about human error.
+
+Using the `iris` dataset build in R, we can find the average petal width of various species of flowers:
+
+```{r}
+mean <- mean(iris$Petal.Length)
+mean
+```
+
+What if we want to present this in our text without the (ugly) R code?
+We could write something like this:
+
+The mean length of flower petals is `r mean` centimeters.
+
+## Figures
+
+You can include all the figures that we presented in Lab 1 in the same way you would in a regular R markdown.
+However, we should add more information to adhere to APA formatting:
+
+**Figure 1**
+
+*Density Plot of Petal Length in Various Flower Species*
+
+```{r}
+ggdensity(iris$Petal.Length, fill = "lightgray")
+```
+
+*Note*.
+A note describing content in the figure would appear here.
+
+Additionally, `papaja` has a built in `apa_theme` function for `ggplot` that's useful:
+
+Let's create a scatterplot like we did in Lab 1:
+
+```{r}
+iris %>% 
+  ggplot(aes(Petal.Length, Petal.Width)) +
+  geom_point() +
+  geom_smooth(method = "lm", se =F) +
+  labs(x = "Petal Length", y = "Petal Width") +
+  theme_apa()
+```
+
+## Tables
+
+Let's create some nicely formatted tables.
+In lab, we used `kable()` to create nicely formatted tables.
+
+In `papaja`, we can use `apa_table()` to create the same table, but with added caption and note:
+
+```{r}
+summary <- iris %>% 
+  describe() %>% 
+  select(mean, sd, median, min, max)
+
+apa_table(
+  
+  summary,
+  caption = "Summary of Iris variables",
+  note = "This table was created with apa_table().",
+  
+)
+```
+
+## Statistical Models and Tests
+
+Finally, what if we want to format our statistical results in APA format? In `papaja` , there's a function for various statistical tests that report APA formatted tables.
+
+### Correlations
+
+In Lab 1, we used `cor(method = "pearson")` to look at a matrix of correlations. For this particular function, we can use `apa_table()`
+
+```{r}
+cor <- iris %>% 
+  select(Sepal.Length:Petal.Width) %>% 
+  cor(method = "pearson") %>% 
+  as.data.frame()
+
+apa_table(
+  cor,
+  caption = "Correlation Table"
+)  
+```
+
+Let's say we want to pull a particular correlation value and report the statistical results. We can use `cor.test()`to find a bivariate correlation, and report the results with `papaja` using `apa_print()`.
+
+Let's look at the correlation between `Petal.Width` from `Sepal.Length`:
+
+```{r}
+cor_model <- stats::cor.test(iris$Petal.Width, iris$Sepal.Length, method = "pearson")
+
+apa_cor <- apa_print(cor_model)
+```
+
+
+There is a positive correlation between petal width and sepal length, `r apa_cor$estimate`.
+
+## Regression
+
+Let's look at the same relationship using simple linear regression:
+
+```{r}
+lm_out <- lm(Petal.Width ~ Sepal.Length, data = iris)
+
+apa_lm <- apa_print(lm_out)
+
+apa_table(
+  
+  apa_lm$table,
+  caption = "A full regression table."
+)
+
+
+```
+
+
+Sepal length significantly predicts petal width, `r apa_lm[["full_result"]][["Sepal_Length"]]`, `r apa_lm[["estimate"]][["modelfit"]][["r2"]]`
