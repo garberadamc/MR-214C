@@ -10,6 +10,8 @@ number_sections: no
 documentclass     : "apa6"
 classoption       : "doc"
 output            : papaja::apa6_word
+fig_width: 6
+fig_height: 4
 ---
 
 ```{r setup, include = FALSE}
@@ -20,13 +22,13 @@ knitr::opts_chunk$set(
 	warning = FALSE,
 	out.width = "80%"
 )
-#installing tinytex & papaja packages
+# Installing tinytex & papaja packages
 #install.packages("tinytex")
 #tinytex::install_tinytex()
 #install.packages("devtools")
 #devtools::install_github("crsh/papaja")
 
-#Set up library here
+# Load libraries 
 library("papaja")
 library(knitr)
 library(janitor)
@@ -42,7 +44,7 @@ library(patchwork)
 ma_schools <- read_csv("https://raw.githubusercontent.com/ejvanholm/DataProjects/master/MASchools.csv")
 
 model_data <- ma_schools %>% 
-  select(test_score = score8, school_spending = exptot, income, english) %>% 
+  select(test_score = score8, spending = exptot, income, english) %>% 
   mutate_at(vars("english"), 
     ~ case_when(
     english < 1 ~ "NO_ELL",
@@ -55,28 +57,27 @@ model_data <- ma_schools %>%
 
 # Introduction
 
-Schools which include English Language Learners (ELLs; non-native English speakers) and schools comprised primarily of native English speakers may differ in academic performance based on socio-economic factors. This study utilizes a multiple regression model approach to investigate the effect of school diversity on test scores. Specifically, we investigate whether the relationship between 8th grade student test scores and school spending is moderated by schools diversity after controlling for parent income. School composition of *English Language Learners* (ELLs; I.e., non-native english speakers) is used as a proxy for *school diversity* due to availability of data. This study utilizes a public-use repository including school district-level educational data reported in 1998 from 220 school districts in Massachusetts. In this paper *school(s)* is used as shorthand to refer to *school-district(s)*. This paper includes the following sections: (1) Review of descriptive statistics, (2) Assessment of regression model assumptions, (3) Description of the regression model specification, and (4) Summary of the multiple regression results. 
+Schools which include English Language Learners (ELLs; non-native English speakers) and schools comprised primarily of native English speakers may differ in academic performance based on a variety of socio-economic factors. This study utilizes a multiple regression model approach to investigate the effect of ELL status on test scores. Specifically, we investigate whether the relationship between 8th grade student test scores and school spending is moderated by ELL status after controlling for parent income. This study utilizes a public-use repository including school district-level educational data reported in 1998 from 220 school districts in Massachusetts. In this paper the term "school(s)" is used as shorthand to refer to "school-district(s)". This paper includes the following sections: (1) review of descriptive statistics, (2) assessment of regression model assumptions, (3) description of the regression model specification, and (4) summary of the multiple regression results. 
 
-\newpage
 
 ## Measures: Model Variables 
 
-Table 1 includes a description of each variable included in the multiple regression model. The variable `english` reporting the percent of ELL students in a school was transformed into a dichotomous variable due to the heavily skewed distribution and clustering of the data at zero (i.e., floor effect; see Figure 1). In the transformed variable, schools which included at least one percent of ELL students were labeled "`ELL`" schools and schools composed of less than one percent ELL students were labeled as "`NO ELL`" schools. 
+Table 1 includes a description of each variable used in the multiple regression model. The variable ELL Status (`english`) reporting the percent of ELL students in a school was transformed into a dichotomous variable due to the heavily skewed distribution and clustering of the data at zero (i.e., floor effect; see Figure 1). In the transformed variable, schools which included at least one percent of ELL students were labeled "ELL" and schools composed of less than one percent ELL students were labeled as "NO ELL". 
 
 ```{r}
 # Table 1
 
 variables <- tribble(
-   ~"Name",         ~"Label",                                  
+   ~"Variable Name", ~"Description",                                  
 #------------------|---------------------------------------------|,
-  "test_score", "Average test scores for 8th grader students (1998)", 
-  "school_spending", "Total spending per-pupil (dollars)", 
-  "english", "School includes ELL students (0=NO ELL, 1=ELL)", 
-  "income", "Average parent income (scale unavailable)") 
+  "Test Score", "Average test scores for 8th grader students (1998)", 
+  "School Spending", "Total school spending per-pupil (dollars)", 
+  "ELL Status", "School includes ELL students (0=NO ELL, 1=ELL)", 
+  "Parent Income", "Average parent income (scale unavailable)") 
 
 apa_table(
   variables,
-  caption = "Description of Variables Included in the Regression Model."
+  caption = "Description of variables included in the regression model"
 )
 ```
 
@@ -85,15 +86,16 @@ apa_table(
 ```{r}
 # Figure 1
 
-ggdensity(ma_schools$english, fill = "blue",title = "Precent of ELL Students in School", ggtheme = theme_apa())
+ggdensity(ma_schools$english, fill = "blue",title = "Precent of ELL Students in School",
+          ggtheme = theme_apa(), xlab="ELL Student (%)")
 ```
-Figure 1: Distribution of percent of ELL students in school.
+Figure 1. Distribution of percent of ELL students in school.
 
 \newline
 
 ## Review of Descriptive Statistics
 
-Table 2 presents the descriptive statistics for the variables included in the regression model. The outcome variable, schools' average `test_scores` has a mean $\mu = 698.4$ and a standard deviation of $\sigma = 21.1$. The distribution of test scores has minimal negative skew (as indicated by the similarity between mean and median values) and small negative kurtosis values. These shape statistics indicate that the outcome variable test scores is approximately normal. Test scores range from 641 to 747 points across schools in the sample. The predictor variable average school spending (`school_spending`) has a mean of $\mu = 5370.3$ and a standard deviation $\sigma = 977$. The distribution of school spending has moderate positive skew, indicating that the right tail of the distribution is long or that the sample includes schools which reported high spending (relative to the mean). The kurtosis value is also positive and moderately high in value indicating that more schools are clustered at each tail of the distribution compared to a normal distribution. School spending ranged from 3465 to 9868 across schools in the sample. The predictor variable average parent income (`income`) has a mean of $\mu = 18.8$ and a standard deviation of $\sigma = 5.81$.  The distribution of parent income is positively skewed and kurtotic with a similar distribution shape to the school spending variable. The highest and lowest average parent incomes reported were 9.7 and 46.85 respectively. Finally, for the proportion of schools with ELL students (`english`), 24% of schools reported ELL students and 76% of schools reported no ELL students (Table 3). 
+Table 2 presents the descriptive statistics for the variables included in the regression model. The outcome variable, 8th grade students' average test scores (`test_scores`) has a mean $M = 698.4$ and a standard deviation of $SD = 21.1$. The distribution of average test scores has minimal negative skew (as indicated by the similarity between mean and median values) and small negative kurtosis values. These shape statistics indicate that the outcome variable test scores is approximately normal. Test scores range from 641 to 747 points across schools in the sample. The predictor variable average school spending per student (`spending`) has a mean of $M = 5370.3$ and a standard deviation $SD = 977$. The distribution of school spending has moderate positive skew, indicating that the right tail of the distribution is long or that the sample includes schools which reported high spending (relative to the mean). The kurtosis value is also positive and moderately high in value indicating that more schools are clustered at each tail of the distribution compared to a normal distribution. Average school spending per student (in dollars) ranged from 3465 to 9868 across schools in the sample. The predictor variable average parent income (`income`) has a mean of $M = 18.8$ and a standard deviation of $SD = 5.81$. The distribution of parent income is positively skewed and kurtotic with a similar distribution shape to the school spending variable. The highest and lowest average parent incomes reported were 9.7 and 46.85 respectively. Finally, for the distribution of schools with ELL students (`english`), 24% of schools reported ELL students and 76% of schools reported no ELL students (Table 3). 
 
 
 ```{r}
@@ -105,7 +107,7 @@ summary <- round(describe(df),2) %>%
 
 apa_table(
   summary,
-  caption = "Descriptive Statistics for the Massachusetts School Data",
+  caption = "Descriptive statistics for the Massachusetts school data",
   align = c("l", "r", "r", "r", "r", "r", "r", "r")
 )
 
@@ -114,7 +116,7 @@ apa_table(
 ```{r}
 # Table 3
 counts <- tabyl(model_data$english) %>% 
-  rename("english" = "model_data$english")
+  rename("ELL Status" = "model_data$english")
 
 apa_table(
   counts,
@@ -126,15 +128,15 @@ apa_table(
 
 ## Evaluation of Multiple Regression Assumptions
 
-Prior to running a multiple linear regression, regression assumptions were evaluated including, linearity, normality, multicollinearity, and homoscedasticity.
+Prior to running a multiple linear regression, model assumptions were evaluated including, linearity, normality, multicollinearity, and homoscedasticity.
 
-Linearity was assessed using bivariate plots to assess the relationship between the two continuous predictors (`school_spending` and `parent_income`) and the outcome variable (`test_scores`). The left panel of Figure 2 displays the bivariate relationship with test scores increasing slightly with increased school spending. This relationship is weak with high heterogeneity in test scores across the range of the school spending variable. The right panel of Figure 2, depicts a positive and moderately strong relationship between parent income and test scores. These plots provide sufficient evidence that the linearity assumption is satisfied for proceeding with the linear specification of these predictors. 
+Linearity was assessed using bivariate plots to assess the relationship between the two continuous predictors (`school_spending` and `parent_income`) and the outcome variable (`test_scores`). The left panel of Figure 2 displays the bivariate relationship between test scores and school spending with higher test scores being associated with higher school spending. This relationship is weak with high heterogeneity in test scores across the range of the school spending variable. The right panel of Figure 2, depicts a positive and moderately strong relationship between parent income and test scores. These plots provide sufficient evidence that the linearity assumption is satisfied for proceeding with the linear specification of these predictors. 
 
 ```{r}
 # Figure 2: Bivariate plots
 
 b1 <- model_data %>% 
-  ggplot(aes(school_spending, test_score)) +
+  ggplot(aes(spending, test_score)) +
   geom_point() +
   geom_smooth(method = "lm", se =F) +
   labs(x = "School Spending", y = "Test Score") + 
@@ -156,38 +158,41 @@ b2 <- model_data %>%
 Figure 2: Bivariate scatterplots with fit line for continuous predictors by outcome variable.
 
 
-Univariate normality was investigated using density plots to visualize the distribution of outcome and predictor variables (Figure 3). The outcome variable test scores on the left panel of Figure 1 can be seen to be approximately normal. The school spending and income predictor variable density plots reflect the positive skew and kurtosis values as reported previously in Table 2. 
+Univariate normality was investigated using density plots to visualize the distribution of outcome and predictor variables (Figure 3). The outcome variable test scores on the left panel of Figure 1 can be seen to be approximately normal. School spending and income density plots reflect the positive skew and kurtosis values to be consistent with Table 2. 
 
 ```{r}
 # Figure 3: Density plots
 
-g1 <- ggdensity(model_data$test_score, fill = "lightgray",title = "Test Score",ggtheme = theme_apa())
+g1 <- ggdensity(model_data$test_score, fill = "lightgray",title = "Test Score", xlab = "",
+                ggtheme = theme_apa())
 
-g2 <- ggdensity(model_data$school_spending, fill = "lightgray",title = "School Spending",ggtheme = theme_apa())
+g2 <- ggdensity(model_data$spending, fill = "lightgray",title = "School Spending (per pupil)",
+                 xlab = "", ggtheme = theme_apa())
 
-g3 <- ggdensity(model_data$income, fill = "lightgray",title = "Parent Income",ggtheme = theme_apa())
+g3 <- ggdensity(model_data$income, fill = "lightgray",title = "Parent Income",
+                 xlab = "",ggtheme = theme_apa())
 
 (g1+g2)/(g3)
 ```
 Figure 3: Density plot of the outcome and predictor variables. 
 
-The multivariate normality assumption can be assessed using QQ-plots of the standardized residuals (Figure 4). The QQ-plot shows that the residuals are approximately normal with negligible violation to normality indicated by the points at either end of the plot slightly deviating form the line. Only a single residual appears to be greater than a standard deviation from normality. This provides evidence that the mulitvariate normality assumption is sufficiently satisfied to proceed with the regression analysis. 
+The multivariate normality assumption can be assessed using QQ-plots of the standardized residuals (Figure 4). The QQ-plot shows that the residuals are approximately normal with negligible violation to normality indicated by the points at either end of the plot slightly deviating form the line. Only a single residual appears to deviate significantly from normality. This provides evidence that the mulitvariate normality assumption is sufficiently satisfied to proceed with the regression analysis. 
 
 ```{r}
 # Regression model
-reg_model <- lm(test_score ~  school_spending + english + income + school_spending*english,
+reg_model <- lm(test_score ~ spending + english + income + spending*english,
            data=model_data)
 
-# Figure 4
+# Figure 4: QQ-plot
 plot(reg_model, 2)
   
 ```
 Figure 4: QQ-plot of standardized residuals 
 
-The multicollinearity assumption can be evaluated using a bivariate correlation table. The Pearson correlations shown in Table 4 are below the threshold $r<.9$ indicating that no serious violations of multicollinearity are present. Furthermore, the variance inflation factor for the predictors are below the recommended threshold (VIF<5) indicating that only moderate levels of multicollinearity exist for predictors in the model (Table 5). 
+The multicollinearity assumption can be evaluated using a bivariate correlation table. The Pearson correlations shown in Table 4 are below the threshold $r < .9$ indicating that no serious violations of multicollinearity are present. Furthermore, the variance inflation factor for the predictors are below the recommended threshold (VIF < 5) indicating that only moderate levels of multicollinearity exist for predictors in the model. 
 
 ```{r}
-# Table 4
+# Table 4: Correlation table 
 
 cortable <- apa.cor.table(model_data[,1:3], filename = NA)
 
@@ -198,12 +203,10 @@ apa_table(cortable$table.body,
           row.names = T)
 ```
 
-Table 5.
-
-*Variance inflation factor (VIF) estimates for predictors in model*.
-```{r}
+```{r, eval=FALSE}
+# Variance inflation factor (VIF)
 library(car)
-no_mod_model <- lm(test_score ~ school_spending + income + english, data=model_data)
+no_mod_model <- lm(test_score ~ spending + income + english, data=model_data)
 
 vif(no_mod_model)
 
@@ -214,86 +217,294 @@ The Homoscedasticity assumption is evaluated using a plot of the standardized re
 # Figure 5: Standardized residuals
 plot(reg_model, 3)
 ```
-Figure 5: Standardized residual plot.
+Figure 5. Standardized residual plot
 
 \newline
 
 # Results 
 
-A multiple regression analysis was conducted to examine the relationship between test scores and school spending, parent income, and school diversity (presence of ELL students) in a sample of $N=220$ schools. Presence of ELL students (`english`) was hypothesized to moderate the relationship between `school_spending` and `test_scores` after controlling for `parent income` as shown in the linear regression equation below. 
+A multiple regression analysis was conducted to examine the relationship between test scores and school spending, parent income, and ELL status in a sample of $N=220$ schools. ELL status was hypothesized to moderate the relationship between school spending and test scores after controlling for parent income as shown in the linear regression equation below. 
+
+
 ```{r}
+# Regression equation (no coefficients)
 library(equatiomatic)
 
 extract_eq(reg_model)
 ```
 
-The multiple regression model with three predictors and interaction term was found to account for 70% of the variance in `test_scores`, $R² = .701$, $F(4, 175) = 102.7$, $p < .001$ (see model equation predicted for study sample).
+The multiple regression model with three predictors and interaction term explained 70% of the variance in `test_scores`, $R² = .701$, $F(4, 175) = 102.7$, $p < .001$ (see model equation).
 ```{r}
-extract_eq(reg_model, use_coefs = TRUE)
+# Regression equation (with coefficients)
+extract_eq(reg_model, use_coefs = TRUE, digits=3)
 ```
 
-Presented in Table 6, the models main effects and interaction term were all found to significantly predict test scores. The main effects for `school_spending` ($b=-0.005$, $t(175)=-3.585$, $p<.001$) and `english` ($b=-41.16$, $t(175)=-3.472$, $p<.001$) were both found to be significant after accounting for the interaction of `school_spending` by `english` and controlling for parent income. The size of the main effect for `english` is a large negative effect (see standardized coefficients; Table 8), indicating that schools with ELL students had test scores 41 points lower on average than schools which reported no ELL students. In contrast, the main effect for `school_spending` was relatively smaller and negative, indicating that for schools without ELL students a one unit increase in test scores was associated with a .005 decrease in school spending. The control variable parent income (`income`), was found to have a positive relationship with test scores ($b=3.05$, $t(175)=15.232$, $p<.001$). This means that every one unit increase in test scores was associated with schools with 3.05 units higher average parent income. 
-```{r}
-#Table 6: Regression Output Summary
+Presented in Table 5, the models main effects and interaction term were all found to significantly predict test scores. The main effects for average school spending ($b=-0.005$, $t(175)=-3.585$, $p<.001$) and  ELL status ($b=-41.16$, $t(175)=-3.472$, $p<.001$) were both found to be significant after accounting for the interaction of school spending by ELL status and controlling for parent income. The size of the main effect for ELL status is a large negative effect (see standardized coefficients; Table 8) and must be interpreted in regard to its relation to the interaction with school spending. In contrast, the main effect for school spending was relatively smaller in magnitude and negative, indicating that for schools without ELL students a 1-unit increase in test scores was associated with a .005 unit decrease in school spending. The control variable parent income, was found to have a positive relationship with test scores ($b=3.05$, $t(175)=15.232$, $p<.001$). This means that every 1-unit increase in test scores was associated with schools with 3.05 units higher average parent income. 
 
-apa_lm <- apa_print(reg_model)
+```{r}
+#Table 5: Regression Output Summary
+
+apa_lm <- apa_print(reg_model, digits = 3)
 
 apa_table(
   apa_lm$table,
-  caption = "Regression Model Summary. Test Score predicted by School Spending, ELL (%), Parent Income",
+  caption = "Regression model summary: Test score predicted by school spending, ELL, and parent income",
   align = c("l", rep("r",5))
 )
 ```
 
-Table 7 presents the standardized regression coefficients which can be used to compare magnitudes across the coefficients using a common scale. Here we can see, for example, that the effect size for `income` ($.82$) is nearly four times the magnitude of the main effect for `school_spending` ($-.23$). Similarly, the main effect for `english` ($-.56$) is twice the magnitude of the main effect for `school_spending`. The standardized regression coefficient for the interaction term `school_spending:englishELL` ($.25$) is considered a small sized effect in education research. However, in the current research context, this moderation effect may be considered meaningful due to its implication regarding test score achievement for historically marginalized populations. 
+Table 6 presents the standardized regression coefficients which can be used to compare magnitudes across the coefficients using a common scale. Here we can see, for example, that the effect size for average parent income ($.82$) is nearly four times the magnitude of the main effect for school spending ($-.23$). Similarly, the main effect for ELL status ($-.56$) is twice the magnitude of the main effect for school spending. The standardized regression coefficient for the interaction of school spending and ELL status ($.25$) is considered a small sized effect in education research. However, in the current research context, this moderation effect may be considered meaningful due to its implication regarding test score achievement for historically marginalized populations. 
 
-Table 7.
+Table 6.
 
 *Standardized coefficients for multiple regression model.*
 ```{r}
+# Table 6: Standardized regression coefficients
 library(effectsize)
 
 parameters::standardize_parameters(reg_model) 
 
 ```
 
-The relationship between school spending and test scores was found to be moderated by school diversity (`englishELL`) after controlling for parent income. This is indicated by the signficant interaction estimated in the model for `school_spending`$*$`englishELL` ($b=.005$, $t(175)=2.64$, $p<.001$). This means that for schools with ELL students the slope of school spending is .005 units higher relative to the slope for schools with no ELL students. This moderation effect is depicted below using a simple slopes plot (Figure 6). As seen in the plot (blue line), test scores decrease with increased school spending for schools with no ELL students after controlling for parent income and this slope is found to be statistically different from zero (i.e., no relationship; see Table 7). In contrast, the simple slope for schools with ELL students is slightly positive but this slope estimate was found not to be significantly different from zero (see Table 6). 
+The relationship between school spending and test scores was found to be moderated by ELL status after controlling for parent income. This is indicated by the signficant interaction estimated in the model for school spending by ELL status ($b=.005$, $t(175)=2.64$, $p<.001$). This means that for schools with ELL students the slope of school spending is .005 units higher relative to the slope for schools with no ELL students. This moderation effect is depicted below using a simple slopes plot (Figure 6). The variable average parent income has been centered so that the plot presents the moderation with parent income held constant at the sample average. As seen in the plot (blue line), test scores decrease with increased school spending for schools with No ELL status after controlling for parent income and this slope is found to be statistically different from zero (i.e., negative relation; see Table 7). In contrast, the simple slope for schools with ELL students (orange line) is slightly positive but this slope estimate was found not to be significantly different from zero (i.e., no relation; see Table 7). 
 
 ```{r}
-library(interactions)
-interact_plot(reg_model, pred = school_spending, modx = english, interval = TRUE, int.width = 0.9, data = model_data) + theme_apa()
+# Regression model with centered control variable (`income`) for interaction plot
+
+centered_data <- model_data %>% 
+  mutate(income_cen = scale(income, scale = FALSE))
+
+cen_model <- lm(test_score ~ spending + english + income_cen + spending*english,
+           data=centered_data)
+ 
 ```
-Figure 6: Simple slope plot of `english` moderating the relationship between `school_spending` and `test_score`.
-
-
-Table 8.
-
-*Simple slope estimates with significance tests.*
 
 ```{r}
+# Create moderation plot (simple slopes)
+library(interactions)
+
+interact_plot(cen_model, pred = spending, modx = english, interval = TRUE, int.width = 0.9, data = centered_data) + theme_apa()
+```
+Figure 6. Simple slope plot of ELL status moderating the relationship between school spending and test scores presented at the sample average of parent income
+
+
+Table 7.
+
+*Simple slope estimates with significance tests*
+
+```{r}
+# Table 7: Simple slopes (significance tests)
 library(sandwich)
 
-sim_slopes(reg_model, pred = school_spending, modx = english, johnson_neyman = FALSE,
-           digits = getOption("jtools-digits", default = 3))
+sim_slopes(cen_model, pred = spending, modx = english, johnson_neyman = FALSE,
+           digits = 4)
 ```
 
-The negative simple slope for schools with no ELL students is surprising because school spending would be expected to increase test scores regardless of population and it is possible that this effect (slope) is being suppressed or reduced by parent income. This theory can be tested by removing the variable `income` from the model and re-plotting the moderation effect. The simple slopes for `school_spending` by `english` without controlling for parent income is shown in Figure 7. Here we can see that school spending now has a positive relationship with test scores for both schools with and without ELL students and the interaction term is no longer significant ($b=.-002$, $t(176)=-0.99$, $p=.319$). 
+The negative simple slope for schools with no ELL students is surprising because school spending would be expected to increase test scores regardless of population and it is possible that this effect (slope) is being suppressed or reduced by parent income. This theory can be tested by removing the variable parent income from the model and re-plotting the moderation effect. The simple slopes plot for school spending by ELL status without controlling for parent income is shown in Figure 7. Here we can see that school spending now has a positive relationship with test scores for both schools with and without ELL students and the interaction term is no longer significant ($b=.-002$, $t(176)=-0.99$, $p=.319$). 
 
 ```{r}
 
-no_income_model <- lm(test_score ~ school_spending*english, data=model_data)
+# Moderation plot: After removing `income`
 
-interact_plot(no_income_model, pred = school_spending, modx = english, interval = TRUE, int.width = 0.9, data = model_data) + theme_apa()
+no_income_model <- lm(test_score ~ spending*english, data=model_data)
+
+interact_plot(no_income_model, pred = spending, modx = english, interval = TRUE, int.width = 0.9, data = model_data) + theme_apa()
 ```
-Figure 7: Simple slope plot presenting moderation result after removing the control variable parent income.
+Figure 7: Simple slope plot presenting moderation result after removing the control variable parent income
 
 ## Discussion
 
-The current study provides a preliminary exploration of how school diversity relates to school spending and 8th grade test scores. The finding that school spending is negatively related to test scores for schools without ELL students after controlling for parent income is interesting. This seems to suggest that school spending may not be benefiting student who's native language is not English in Massachusetts school districts. Further research is warranted to understand the reasons for this unexpected result. A theory which may explain this result, is that schools with higher spending (i.e., more affluent districts) may have school climates that have adverse effects for students who are non-native speakers (i.e., schools where discrimination is prevalent). To explore such a theory further research is warranted that includes school climate as a moderating and/or mediating variable in the model. Limitations of this analysis include small sample size (N=220), unavailability of exogenous variables potentially salient to the research question (e.g, school climate), and lack of experimental control which would permit the evaluation of causal inferences. An important contribution of this study is that it suggest directions for future research such as the investigation of how school climate relates to test scores and school spending for marginalized populations. 
+The current study provides a preliminary exploration of how ELL status relates to school spending and 8th grade test scores. The finding that school spending is negatively related to test scores for schools without ELL students after controlling for parent income is interesting. This seems to suggest that school spending may not be benefiting student who's native language is not English in Massachusetts school districts. Further research is warranted to understand the reasons for this unexpected result. A theory which may explain this result, is that schools with higher spending (i.e., more affluent districts) may have school climates that have adversely affect students who are non-native speakers (i.e., schools where discrimination is prevalent). To explore such a theory further research is warranted that includes measures of school climate as a moderating and/or mediating variable in the model. Limitations of this analysis include small sample size (N=220), unavailability of exogenous variables potentially salient to the research question (e.g, school climate), and lack of experimental control. An important contribution of this study is that it suggests directions for future research such as the investigation of how school climate relates to test scores and school spending for historically underprivileged populations. 
 
 
 ## References 
 
 Data Source: https://search.r-project.org/CRAN/refmans/AER/html/MASchools.html
+
+---
+
+# `R` Code: All Analyses, Plots, and Tables
+
+```{r, eval=FALSE, echo=TRUE}
+
+# Installing tinytex & papaja packages
+
+#install.packages("tinytex")
+#tinytex::install_tinytex()
+#install.packages("devtools")
+#devtools::install_github("crsh/papaja")
+
+#Load libraries 
+library("papaja")
+library(knitr)
+library(janitor)
+library(ggpubr)
+library(psych)
+library(tidyverse)
+library(apaTables)
+library(patchwork)
+
+# Read in data
+ma_schools <- read_csv("https://raw.githubusercontent.com/ejvanholm/DataProjects/master/MASchools.csv")
+
+model_data <- ma_schools %>% 
+  select(test_score = score8, spending = exptot, income, english) %>% 
+  mutate_at(vars("english"), 
+    ~ case_when(
+    english < 1 ~ "NO_ELL",
+    english >= 1 ~ "ELL" )) %>% 
+  mutate(english = factor(english,
+                          labels = c("NO ELL", "ELL"),
+                          levels = c("NO_ELL", "ELL")))
+
+# Table 1
+
+variables <- tribble(
+   ~"Variable Name", ~"Description",                                  
+#------------------|---------------------------------------------|,
+  "Test Score", "Average test scores for 8th grader students (1998)", 
+  "School Spending", "Total school spending per-pupil (dollars)", 
+  "ELL Status", "School includes ELL students (0=NO ELL, 1=ELL)", 
+  "Parent Income", "Average parent income (scale unavailable)") 
+
+apa_table(
+  variables,
+  caption = "Description of Variables Included in the Regression Model.")
+
+
+# Figure 1
+
+ggdensity(ma_schools$english, fill = "blue",title = "Precent of ELL Students in School",
+          ggtheme = theme_apa(), xlab="ELL Student (%)")
+
+# Table 2: Descriptives
+df <- model_data %>% select(-english)
+
+summary <- round(describe(df),2) %>% 
+  select(mean, sd, median, min, max, skew, kurtosis) 
+
+apa_table(
+  summary,
+  caption = "Descriptive Statistics for the Massachusetts School Data",
+  align = c("l", "r", "r", "r", "r", "r", "r", "r")
+)
+
+# Table 3
+counts <- tabyl(model_data$english) %>% 
+  rename("ELL Status" = "model_data$english")
+
+apa_table(
+  counts,
+  caption = "Counts for schools with ELL students & NO ELL students"
+)
+
+# Figure 2: Bivariate plots
+
+b1 <- model_data %>% 
+  ggplot(aes(spending, test_score)) +
+  geom_point() +
+  geom_smooth(method = "lm", se =F) +
+  labs(x = "School Spending", y = "Test Score") + 
+  labs (title = "School Spending & Test Score") +
+  theme_apa()
+
+
+b2 <- model_data %>% 
+  ggplot(aes(income, test_score)) +
+  geom_point() +
+  geom_smooth(method = "lm", se =F) +
+  labs(x = "Parent Income", y = "Test Score") + 
+  labs (title = "Parent Income & Test Score") +
+  theme_apa()
+
+(b1+b2) 
+
+# Figure 3: Density plots
+
+g1 <- ggdensity(model_data$test_score, fill = "lightgray",title = "Test Score", xlab = "",
+                ggtheme = theme_apa())
+
+g2 <- ggdensity(model_data$spending, fill = "lightgray",title = "School Spending (per pupil)",
+                 xlab = "", ggtheme = theme_apa())
+
+g3 <- ggdensity(model_data$income, fill = "lightgray",title = "Parent Income",
+                 xlab = "",ggtheme = theme_apa())
+
+(g1+g2)/(g3)
+
+# Regression model
+reg_model <- lm(test_score ~ spending + english + income + spending*english,
+           data=model_data)
+
+# Figure 4: QQ-plot
+plot(reg_model, 2)
+
+# Table 4: Correlation table 
+
+cortable <- apa.cor.table(model_data[,1:3], filename = NA)
+
+apa_table(cortable$table.body,
+          caption = cortable$table.title,
+          note = cortable$table.note,
+          font_size = "footnotesize",
+          row.names = T)
+
+# Variance inflation factor (VIF)
+library(car)
+no_mod_model <- lm(test_score ~ spending + income + english, data=model_data)
+
+vif(no_mod_model)
+
+# Figure 5: Standardized residuals
+plot(reg_model, 3)
+
+# Regression equation (no coefficients)
+library(equatiomatic)
+
+extract_eq(reg_model)
+
+# Regression equation (with coefficients)
+extract_eq(reg_model, use_coefs = TRUE, digits=3)
+
+#Table 5: Regression Output Summary
+apa_lm <- apa_print(reg_model, digits = 3)
+
+apa_table(
+  apa_lm$table,
+  caption = "Regression Model Summary. Test Score predicted by School Spending, ELL (%), Parent Income",
+  align = c("l", rep("r",5))
+)
+
+# Table 6: Standardized regression coefficients
+library(effectsize)
+
+parameters::standardize_parameters(reg_model) 
+
+# Regression model with centered control variable (`income`) for interaction plot
+
+centered_data <- model_data %>% 
+  mutate(income_cen = scale(income, scale = FALSE))
+
+cen_model <- lm(test_score ~ spending + english + income_cen + spending*english,
+           data=centered_data)
+ 
+# Create moderation plot (simple slopes)
+library(interactions)
+
+interact_plot(cen_model, pred = spending, modx = english, interval = TRUE, int.width = 0.9, data = centered_data) + theme_apa()
+
+# Table 7: Simple slopes (significance tests)
+library(sandwich)
+
+sim_slopes(cen_model, pred = spending, modx = english, johnson_neyman = FALSE,
+           digits = 4)
+
+# Moderation plot: After removing `income`
+
+no_income_model <- lm(test_score ~ school_spending*english, data=model_data)
+
+interact_plot(no_income_model, pred = school_spending, modx = english, interval = TRUE, int.width = 0.9, data = model_data) + theme_apa()
+
+```
 
 
