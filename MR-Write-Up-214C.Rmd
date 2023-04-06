@@ -1,6 +1,6 @@
 ---
 title             : "214C - Lab 1 - Multiple Regression Write-Up"
-shorttitle        : "214C Lab 1"
+shorttitle        : "ELL Status Moderates Test Scores and School Spending"
 
 author: 
   - name          : "Adam Garber"
@@ -179,7 +179,7 @@ Figure 3: Density plot of the outcome and predictor variables.
 The multivariate normality assumption can be assessed using QQ-plots of the standardized residuals (Figure 4). The QQ-plot shows that the residuals are approximately normal with negligible violation to normality indicated by the points at either end of the plot slightly deviating form the line. Only a single residual appears to deviate significantly from normality. This provides evidence that the mulitvariate normality assumption is sufficiently satisfied to proceed with the regression analysis. 
 
 ```{r}
-# Regression model
+# Regression model (needed for QQ-plot)
 reg_model <- lm(test_score ~ spending + english + income + spending*english,
            data=model_data)
 
@@ -206,6 +206,7 @@ apa_table(cortable$table.body,
 ```{r, eval=FALSE}
 # Variance inflation factor (VIF)
 library(car)
+# reg. model with interaction removed
 no_mod_model <- lm(test_score ~ spending + income + english, data=model_data)
 
 vif(no_mod_model)
@@ -223,28 +224,43 @@ Figure 5. Standardized residual plot
 
 # Results 
 
-A multiple regression analysis was conducted to examine the relationship between test scores and school spending, parent income, and ELL status in a sample of $N=220$ schools. ELL status was hypothesized to moderate the relationship between school spending and test scores after controlling for parent income as shown in the linear regression equation below. 
+A multiple regression analysis was conducted to examine the relationship between test scores and school spending, parent income, and ELL status in a sample of $N=220$ schools. ELL status was hypothesized to moderate the relationship between average school spending and average test scores after controlling for parent income as shown in the linear regression equation below. 
+
+```{r}
+# To present regression coefficient results we will center predictors `spending` & `income`
+# Predictors are centered so that the intercept is meaningful to interpret 
+# Without centering, the intercept represents schools with (`spending=$0` & `income=$0`). 
+# Schools with *zero* average spending/income do not exist in the sample (values are not plausible). 
+# With centering intercept is for schools with spending=5370.3 & income=18.8 (mean values) & ELL=0 (No ELL)
+centered_data <- model_data %>% 
+  mutate(spending_cen = scale(spending, scale = FALSE), # center spending variable
+         income_cen = scale(income, scale = FALSE)) # center income variable
+
+cen_model <- lm(test_score ~ spending_cen + english + income_cen + spending_cen*english,
+           data=centered_data)
+
+```
 
 
 ```{r}
 # Regression equation (no coefficients)
 library(equatiomatic)
 
-extract_eq(reg_model)
+extract_eq(cen_model)
 ```
 
-The multiple regression model with three predictors and interaction term explained 70% of the variance in `test_scores`, $R² = .701$, $F(4, 175) = 102.7$, $p < .001$ (see model equation).
+The multiple regression model with three predictors and interaction term explained 70% of the variance in average test scores, $R² = .701$, $F(4, 175) = 102.7$, $p < .001$ (see model equation).
 ```{r}
 # Regression equation (with coefficients)
-extract_eq(reg_model, use_coefs = TRUE, digits=3)
+extract_eq(cen_model, use_coefs = TRUE, digits=3)
 ```
 
-Presented in Table 5, the models main effects and interaction term were all found to significantly predict test scores. The main effects for average school spending ($b=-0.005$, $t(175)=-3.585$, $p<.001$) and  ELL status ($b=-41.16$, $t(175)=-3.472$, $p<.001$) were both found to be significant after accounting for the interaction of school spending by ELL status and controlling for parent income. The size of the main effect for ELL status is a large negative effect (see standardized coefficients; Table 8) and must be interpreted in regard to its relation to the interaction with school spending. In contrast, the main effect for school spending was relatively smaller in magnitude and negative, indicating that for schools without ELL students a 1-unit increase in test scores was associated with a .005 unit decrease in school spending. The control variable parent income, was found to have a positive relationship with test scores ($b=3.05$, $t(175)=15.232$, $p<.001$). This means that every 1-unit increase in test scores was associated with schools with 3.05 units higher average parent income. 
+Presented in Table 5, the regression model's main effects and interaction term were all found to significantly predict test scores. The continuous predictors school spending and parent income were centered so that the intercept may be meaningfully interpreted. Therefore, the intercept estimate ($a=701.5$) is the average test score predicted for schools with school spending and income held constant at their respective sample means ($M_(spending) = 5370.3$; $M_(income) = 18.8$) for "No ELL" schools. The main effects for average school spending ($b=-0.005$, $t(175)=-3.5$, $p<.001$) and  ELL status ($b=-12.34$, $t(175)=-5.5$, $p<.001$) were both found to be significant after accounting for the interaction of school spending by ELL status and controlling for parent income. The school spending and parent income main effects, which are included in the interaction term, represent the condition when the value of the other term in the interaction is zero (i.e., when the interaction term has no effect). The main effect school spending indicates that for every 1-unit increase in school spending (from the sample mean), average test scores decrease by -.005 points for No ELL schools (`ELL status` = 0) with parent income held constant at the sample mean. The main effect for ELL status indicates that schools with ELL students have on average lower test scores by 12.34 points, when school spending is held constant at the sample mean (`spending` = 0) and parent income is held constant at the sample mean. The main effect for ELL status is a moderately sized negative effect (see standardized coefficients; Table 8) . In contrast, the main effect for school spending was relatively smaller in magnitude and negative. The control variable parent income, was found to have a positive relationship with test scores ($b=3.05$, $t(175)=15.232$, $p<.001$). This means that every 1-unit increase in test scores was associated with schools with 3.05 units higher average parent income. 
 
 ```{r}
 #Table 5: Regression Output Summary
 
-apa_lm <- apa_print(reg_model, digits = 3)
+apa_lm <- apa_print(cen_model, digits = 3)
 
 apa_table(
   apa_lm$table,
@@ -262,14 +278,16 @@ Table 6.
 # Table 6: Standardized regression coefficients
 library(effectsize)
 
+# Note: standardized coefficients are not affected by centering
 parameters::standardize_parameters(reg_model) 
 
 ```
 
-The relationship between school spending and test scores was found to be moderated by ELL status after controlling for parent income. This is indicated by the signficant interaction estimated in the model for school spending by ELL status ($b=.005$, $t(175)=2.64$, $p<.001$). This means that for schools with ELL students the slope of school spending is .005 units higher relative to the slope for schools with no ELL students. This moderation effect is depicted below using a simple slopes plot (Figure 6). The variable average parent income has been centered so that the plot presents the moderation with parent income held constant at the sample average. As seen in the plot (blue line), test scores decrease with increased school spending for schools with No ELL status after controlling for parent income and this slope is found to be statistically different from zero (i.e., negative relation; see Table 7). In contrast, the simple slope for schools with ELL students (orange line) is slightly positive but this slope estimate was found not to be significantly different from zero (i.e., no relation; see Table 7). 
+The relationship between school spending and test scores was found to be moderated by ELL status after controlling for parent income. This is indicated by the significant interaction estimated in the model for school spending by ELL status ($b=.005$, $t(175)=2.64$, $p<.001$). This means that for schools with ELL students the slope of school spending is .005 units higher relative to the slope for schools with no ELL students ($b_(ELL)= -.00497+.00536=.00039$. This moderation effect is depicted below using a simple slopes plot (Figure 6). The variable average parent income has been centered so that the plot presents the moderation with parent income held constant at the sample average. As seen in the plot (blue line), test scores decrease with increased school spending for schools with No ELL status after controlling for parent income and this slope is found to be statistically different from zero (i.e., negative relation; see Table 7). In contrast, the simple slope for schools with ELL students (orange line) is slightly positive but this slope estimate was found not to be significantly different from zero (i.e., no relation; see Table 7). 
 
 ```{r}
-# Regression model with centered control variable (`income`) for interaction plot
+# Regression model with ONLY the control variable `income` centered for interaction plot (`income` is fixed at the sample mean)
+# `spending` is NOT centered so that the x-axis of the interaction plot depicts the range of school spending on the variables original scale (`spending` range; 3465-9868)
 
 centered_data <- model_data %>% 
   mutate(income_cen = scale(income, scale = FALSE))
@@ -314,7 +332,7 @@ Figure 7: Simple slope plot presenting moderation result after removing the cont
 
 ## Discussion
 
-The current study provides a preliminary exploration of how ELL status relates to school spending and 8th grade test scores. The finding that school spending is negatively related to test scores for schools without ELL students after controlling for parent income is interesting. This seems to suggest that school spending may not be benefiting schools which include ELL students in Massachusetts school districts. Further research is warranted to understand the reasons for this unexpected result. A theory which may explain this result, is that schools with higher spending (i.e., more affluent districts) may have school climates that have adverse effects for students who are non-native speakers (i.e., schools where discrimination is prevalent). To explore such a theory further research is warranted that includes measures of school climate as a moderating and/or mediating variable in the model. Limitations of this analysis include small sample size (*N*=220), unavailability of exogenous variables potentially salient to the research question (e.g, school climate), and lack of experimental control. An important contribution of this study is that it suggests directions for future research such as the investigation of how school climate relates to test scores and school spending for historically underprivileged populations.
+The current study provides a preliminary exploration of how ELL status relates to school spending and 8th grade test scores. The finding that school spending is negatively related to test scores for schools without ELL students after controlling for parent income is interesting. This seems to suggest that school spending may not be benefiting schools which include ELL students in Massachusetts school districts. Further research is warranted to understand the reasons for this unexpected result. A theory which may explain this result, is that schools with higher spending (i.e., more affluent districts) may have school climates that have adverse effects for students who are non-native speakers (i.e., schools where discrimination is prevalent). To explore such a theory further research is warranted that includes measures of school climate as a moderating and/or mediating variable in the model. Limitations of this analysis include small sample size (*N*=220), unavailability of exogenous variables potentially salient to the research question (e.g, school climate), and lack of experimental control. A contribution of this study is that it suggests directions for future research such as the investigation of how school climate relates to test scores and school spending for historically underprivileged populations.
 
 
 ## References 
@@ -458,16 +476,30 @@ vif(no_mod_model)
 # Figure 5: Standardized residuals
 plot(reg_model, 3)
 
+
+# To present regression coefficient results we will center predictors `spending` & `income`
+# Predictors are centered so that the intercept is meaningful to interpret 
+# Without centering, the intercept represents schools with (`spending=$0` & `income=$0`). 
+# Schools with *zero* average spending/income do not exist in the sample (values are not plausible). 
+# With centering intercept is for schools with spending=5370.3 & income=18.8 (mean values) & ELL=0 (No ELL)
+centered_data <- model_data %>% 
+  mutate(spending_cen = scale(spending, scale = FALSE), # center spending variable
+         income_cen = scale(income, scale = FALSE)) # center income variable
+
+cen_model <- lm(test_score ~ spending_cen + english + income_cen + spending_cen*english,
+           data=centered_data)
+
+
 # Regression equation (no coefficients)
 library(equatiomatic)
 
-extract_eq(reg_model)
+extract_eq(cen_model)
 
 # Regression equation (with coefficients)
-extract_eq(reg_model, use_coefs = TRUE, digits=3)
+extract_eq(cen_model, use_coefs = TRUE, digits=3)
 
 #Table 5: Regression Output Summary
-apa_lm <- apa_print(reg_model, digits = 3)
+apa_lm <- apa_print(cen_model, digits = 3)
 
 apa_table(
   apa_lm$table,
@@ -480,7 +512,8 @@ library(effectsize)
 
 parameters::standardize_parameters(reg_model) 
 
-# Regression model with centered control variable (`income`) for interaction plot
+# Regression model with ONLY the control variable `income` centered for interaction plot (`income` is fixed at the sample mean)
+# `spending` is NOT centered so that the x-axis of the interaction plot depicts the range of school spending on the variables original scale (`spending` range; 3465-9868)
 
 centered_data <- model_data %>% 
   mutate(income_cen = scale(income, scale = FALSE))
