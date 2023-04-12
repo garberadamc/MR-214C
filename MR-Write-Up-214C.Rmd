@@ -336,7 +336,7 @@ sim_slopes(cen_model, pred = spending, modx = english, johnson_neyman = FALSE,
            digits = 4)
 ```
 
-The negative simple slope for schools with no ELL students is surprising because school spending would be expected to increase test scores regardless of population and it is possible that this effect (slope) is being suppressed or reduced by parent income. This theory can be tested by removing the variable parent income from the model and re-plotting the moderation effect. The simple slopes plot for school spending by ELL status without controlling for parent income is shown in Figure 7. Here we can see that school spending now has a positive relationship with test scores for both schools with and without ELL students and the interaction term is no longer significant ($b=.-002$, $t(176)=-0.99$, $p=.319$). 
+The negative simple slope for schools with no ELL students is surprising because school spending would be expected to increase test scores regardless of population and it is possible that this effect (slope) is being suppressed or reduced by parent income. This theory can be tested by removing the variable parent income from the model and re-plotting the moderation effect. The simple slopes plot for school spending by ELL status without controlling for parent income is shown in Figure 7. Here we can see that school spending now has a positive relationship with test scores for both schools with and without ELL students and the interaction term is no longer significant ($b=-.002$, $t(176)=-0.99$, $p=.319$). 
 
 Figure 7.
 
